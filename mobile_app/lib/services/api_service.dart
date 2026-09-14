@@ -5,13 +5,11 @@ import 'package:http/http.dart' as http;
 import '../models/video_info.dart';
 
 class ApiService {
-  // Default Base URL - auto chooses based on platform
-  static String defaultBaseUrl = _resolveDefaultUrl();
+  // Default Base URL - Production backend on Render
+  static String defaultBaseUrl = 'https://quicksave-video-downloader.onrender.com';
 
   static String _resolveDefaultUrl() {
-    if (kIsWeb) return 'http://localhost:8000';
-    if (!kIsWeb && io.Platform.isAndroid) return 'http://10.0.2.2:8000';
-    return 'http://localhost:8000';
+    return 'https://quicksave-video-downloader.onrender.com';
   }
 
   String baseUrl;
