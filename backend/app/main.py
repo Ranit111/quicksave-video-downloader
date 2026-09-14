@@ -63,7 +63,13 @@ def cleanup_file(path: str):
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "QuickSave Downloader API"}
+    return {
+        "status": "ok",
+        "service": "QuickSave Downloader API",
+        "yt_dlp_version": yt_dlp.version.__version__,
+        "has_cookies": bool(get_cookies_file()),
+        "cookies_path": get_cookies_file(),
+    }
 
 @app.get("/api/platforms")
 def get_supported_platforms():
@@ -142,8 +148,10 @@ def classify_error(error: Exception) -> tuple[int, str]:
         return 403, "This video is private or restricted."
     if "video unavailable" in msg_lower or "has been removed" in msg_lower or "does not exist" in msg_lower or "not found" in msg_lower or "404" in msg_lower:
         return 404, "Video not found or has been removed."
-    if "confirm your age" in msg_lower or "sign in to confirm" in msg_lower or "age-gated" in msg_lower or "inappropriate" in msg_lower:
+    if "confirm your age" in msg_lower or "age-gated" in msg_lower or "inappropriate" in msg_lower:
         return 403, "This video is age-restricted and requires sign-in."
+    if "sign in to confirm you" in msg_lower or "confirm you're not a bot" in msg_lower:
+        return 429, "Bot verification challenge encountered from hosting provider. Please retry."
     if "not available in your country" in msg_lower or "geo-restricted" in msg_lower or "geographic" in msg_lower or "blocked in your country" in msg_lower:
         return 403, "This video is not available in your region."
     if "is a live stream" in msg_lower or "live event" in msg_lower or "stream is live" in msg_lower:
