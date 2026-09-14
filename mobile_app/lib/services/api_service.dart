@@ -8,10 +8,6 @@ class ApiService {
   // Default Base URL - Production backend on Render
   static String defaultBaseUrl = 'https://quicksave-video-downloader.onrender.com';
 
-  static String _resolveDefaultUrl() {
-    return 'https://quicksave-video-downloader.onrender.com';
-  }
-
   String baseUrl;
   final http.Client _client;
 
