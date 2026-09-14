@@ -335,6 +335,11 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         "extract_flat": False,
         "no_color": True,
         "nocheckcertificate": True,
+        "extractor_args": {
+        "youtube": {
+            "player_client": ["android", "web"]
+        }
+    }
     }
 
     info = None
