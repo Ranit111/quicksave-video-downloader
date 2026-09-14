@@ -376,7 +376,39 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
     # Build fallback option sets for maximum resilience across cloud/datacenter IPs
     option_sets = []
 
-    # 1. Android + Web InnerTube engine (most resilient against cloud IP bot checks)
+    # 1. Apple VisionOS + Android InnerTube engine (bypasses bot challenges & PO token requirements)
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos", "android", "web"]
+            }
+        }
+    })
+
+    # 2. VisionOS pure native HLS client
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos"]
+            }
+        }
+    })
+
+    # 3. Android + Web fallback
     option_sets.append({
         "quiet": True,
         "no_warnings": True,
@@ -392,7 +424,7 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         }
     })
 
-    # 2. If cookie file exists, try with cookies
+    # 4. If cookie file exists, try with cookies
     if cookie_file:
         logger.info(f"Using cookies from: {cookie_file}")
         option_sets.append({
@@ -406,7 +438,7 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "nocheckcertificate": True,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["web", "mweb", "web_creator", "ios"]
+                    "player_client": ["visionos", "web", "mweb"]
                 }
             }
         })
@@ -421,23 +453,7 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "nocheckcertificate": True,
         })
 
-    # 3. Android standalone client fallback
-    option_sets.append({
-        "quiet": True,
-        "no_warnings": True,
-        "skip_download": True,
-        "socket_timeout": 15,
-        "extract_flat": False,
-        "no_color": True,
-        "nocheckcertificate": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android"]
-            }
-        }
-    })
-
-    # 4. Standard default
+    # 5. Standard default
     option_sets.append({
         "quiet": True,
         "no_warnings": True,

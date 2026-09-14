@@ -226,7 +226,7 @@ def stream_media(
                 "nocheckcertificate": True,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["android", "web"]
+                        "player_client": ["visionos", "android", "web"]
                     }
                 }
             }
@@ -298,7 +298,7 @@ def stream_media(
                     "nocheckcertificate": True,
                     "extractor_args": {
                         "youtube": {
-                            "player_client": ["android", "web"]
+                            "player_client": ["visionos", "android", "web"]
                         }
                     }
                 }
@@ -332,7 +332,7 @@ def stream_media(
                         "nocheckcertificate": True,
                         "extractor_args": {
                             "youtube": {
-                                "player_client": ["android", "web"]
+                                "player_client": ["visionos", "android", "web"]
                             }
                         }
                     }
@@ -402,7 +402,7 @@ def stream_media(
                         "geo_bypass": True,
                         "extractor_args": {
                             "youtube": {
-                                "player_client": ["android", "web"]
+                                "player_client": ["visionos", "android", "web"]
                             }
                         }
                     }

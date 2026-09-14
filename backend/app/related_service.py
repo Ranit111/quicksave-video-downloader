@@ -105,11 +105,14 @@ def fetch_related_videos(raw_info: dict, max_results: int = 4) -> List[RelatedVi
         "skip_download": True,
         "socket_timeout": 6,
         "ignoreerrors": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos", "android", "web"]
+            }
+        }
     }
     if cookie_file:
         ydl_opts["cookiefile"] = cookie_file
-    else:
-        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
     for query in candidates:
         if len(related) >= max_results:
