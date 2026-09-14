@@ -41,6 +41,8 @@ def get_cookies_file() -> Optional[str]:
         os.path.join(os.getcwd(), "backend", "cookies.txt"),   # ./backend/cookies.txt
         "/app/cookies.txt",                                    # Docker /app/cookies.txt
         "/app/backend/cookies.txt",                            # Docker /app/backend/cookies.txt
+        "/opt/render/project/src/cookies.txt",                 # Render /opt/render/project/src/cookies.txt
+        "/opt/render/project/src/backend/cookies.txt",         # Render /opt/render/project/src/backend/cookies.txt
     ]
 
     for cand in candidates:
