@@ -1,4 +1,4 @@
-﻿# ⚡ QuickSave — Universal High-Speed Media Downloader
+# ⚡ QuickSave — Universal High-Speed Media Downloader
 
 <p align="center">
   <img src="mobile_app/assets/logo/app_logo.png" width="120" height="120" alt="QuickSave Logo" style="border-radius: 24px;" />
@@ -39,12 +39,12 @@
 
 ```mermaid
 graph TD
-    Client[📱 Flutter Client (Mobile / Web)] -->|1. Paste Link / Auto-detect| ExtractAPI[POST /api/extract]
-    ExtractAPI -->|2. yt-dlp Engine| Metadata[Extract Video Info & Stream URLs]
-    Metadata -->|3. Return JSON| Client
-    Client -->|4. Request Quality Stream| StreamAPI[GET /api/stream]
-    StreamAPI -->|5. Chunked Live Stream| Client
-    Client -->|6. Save Stream| Gallery[💾 Public Gallery / Downloads]
+    Client["📱 Flutter Client (Mobile / Web)"] -->|"1. Paste Link / Auto-detect"| ExtractAPI["POST /api/extract"]
+    ExtractAPI -->|"2. yt-dlp Engine"| Metadata["Extract Video Info & Stream URLs"]
+    Metadata -->|"3. Return JSON"| Client
+    Client -->|"4. Request Quality Stream"| StreamAPI["GET /api/stream"]
+    StreamAPI -->|"5. Chunked Live Stream"| Client
+    Client -->|"6. Save Stream"| Gallery["💾 Public Gallery / Downloads"]
 ```
 
 ---
