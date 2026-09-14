@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "169451032431",
+    "firebase_url": "https://starry-science-jxfb9-default-rtdb.firebaseio.com",
+    "project_id": "starry-science-jxfb9",
+    "storage_bucket": "starry-science-jxfb9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:169451032431:android:e154fcfdf05c21dfd9a0d8",
+        "android_client_info": {
+          "package_name": "com.snapsave.downloader.mobile_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0b_WjugxQTUoq6Dztlhpj0Ei4za1egmw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

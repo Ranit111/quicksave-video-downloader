@@ -43,6 +43,8 @@ dependencies:
   intl: ^0.19.0
   web: ^1.1.0
   connectivity_plus: ^7.3.1
+  firebase_core: ^4.15.0
+  firebase_analytics: ^12.6.0
 
 dev_dependencies:
   flutter_test:
