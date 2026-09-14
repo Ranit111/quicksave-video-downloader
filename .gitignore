@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -64,6 +64,11 @@ mobile_app/android/mobile_app_android.iml
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Cookies & Secrets
+cookies.txt
+*cookies.txt
+*.cookies
 
 # Scratch and test binaries
 scratch/
