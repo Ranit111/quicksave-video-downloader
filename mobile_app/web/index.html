@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="SnapSave - Universal Video & Audio Downloader">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="QuickSave">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="app_logo.png"/>
+
+  <title>QuickSave - Video Downloader</title>
+  <link rel="manifest" href="manifest.json">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: #090A14;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #splash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #161936 0%, #0E1022 50%, #090A14 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 99999;
+      transition: opacity 0.4s ease-out;
+      pointer-events: none;
+    }
+    .ambient-glow {
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(124, 58, 237, 0.35) 0%, rgba(6, 182, 212, 0.15) 50%, transparent 70%);
+      pointer-events: none;
+      animation: pulseGlow 2s infinite alternate ease-in-out;
+    }
+    .splash-content {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 10;
+    }
+    .logo-box {
+      width: 100px;
+      height: 100px;
+      border-radius: 24px;
+      background: #13172E;
+      box-shadow: 0 10px 30px rgba(124, 58, 237, 0.45), 0 0 20px rgba(6, 182, 212, 0.25);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      animation: scalePop 0.8s ease-out forwards;
+    }
+    .logo-img {
+      width: 86px;
+      height: 86px;
+      object-fit: contain;
+      border-radius: 18px;
+    }
+    .app-title {
+      margin-top: 22px;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #A78BFA 0%, #38BDF8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .app-subtitle {
+      margin-top: 6px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: 600;
+    }
+    .progress-bar-wrap {
+      margin-top: 28px;
+      width: 170px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #7C3AED, #06B6D4);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.8);
+      border-radius: 999px;
+      animation: sweepProgress 1.8s infinite ease-in-out;
+      transform-origin: left;
+    }
+    .creator-badge {
+      position: absolute;
+      bottom: 36px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+    }
+    .creator-text {
+      font-size: 11px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: 500;
+    }
+    .creator-name {
+      color: #38BDF8;
+      font-weight: 700;
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      100% { transform: scale(1.15); opacity: 1; }
+    }
+    @keyframes scalePop {
+      0% { transform: scale(0.8); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes sweepProgress {
+      0% { transform: translateX(-100%); }
+      50% { transform: translateX(0%); }
+      100% { transform: translateX(100%); }
+    }
+  </style>
+</head>
+<body>
+  <!-- Instant Zero-Delay Splash Screen -->
+  <div id="splash">
+    <div class="ambient-glow"></div>
+    <div class="splash-content">
+      <div class="logo-box">
+        <img src="app_logo.png" alt="QuickSave Logo" class="logo-img" onerror="this.src='icons/Icon-192.png'"/>
+      </div>
+      <h1 class="app-title">QuickSave</h1>
+      <p class="app-subtitle">Next-Gen Media Downloader</p>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill"></div>
+      </div>
+    </div>
+    <div class="creator-badge">
+      <span class="creator-text">Created with ❤️ by <span class="creator-name">Ranit Jana</span></span>
+    </div>
+  </div>
+
+  <script>
+    function removeSplash() {
+      const splash = document.getElementById('splash');
+      if (splash && splash.style.opacity !== '0') {
+        splash.style.opacity = '0';
+        setTimeout(function() {
+          if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 400);
+      }
+    }
+    window.addEventListener('flutter-first-frame', removeSplash);
+    setTimeout(removeSplash, 3000);
+  </script>
+
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
