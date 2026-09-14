@@ -56,8 +56,8 @@ def test_extract_qualities_structure():
     mock_info = {
         "id": "test123",
         "title": "Test Title",
-        "height": 720,
-        "width": 1280,
+        "height": 1080,
+        "width": 1920,
     }
     qualities = extract_qualities(
         ydl=None,
@@ -79,4 +79,42 @@ def test_classify_error():
     assert classify_error(Exception("This video is private"))[0] == 403
     assert classify_error(Exception("HTTP Error 403: Forbidden"))[0] == 403
     assert classify_error(Exception("Unsupported URL"))[0] == 400
+
+def test_extract_qualities_4k_2k_and_distinct_sizes():
+    mock_4k = {
+        "id": "4k_video",
+        "title": "4K Ultra Video",
+        "height": 2160,
+        "width": 3840,
+        "duration": 120,
+        "formats": [
+            {"format_id": "4k", "height": 2160, "width": 3840, "ext": "mp4", "filesize": 500000000, "vcodec": "av01"},
+            {"format_id": "2k", "height": 1440, "width": 2560, "ext": "mp4", "filesize": 250000000, "vcodec": "av01"},
+            {"format_id": "1080", "height": 1080, "width": 1920, "ext": "mp4", "filesize": 120000000, "vcodec": "avc1"},
+            {"format_id": "720", "height": 720, "width": 1280, "ext": "mp4", "filesize": 60000000, "vcodec": "avc1"},
+            {"format_id": "audio", "height": None, "width": None, "ext": "m4a", "filesize": 10000000, "vcodec": "none", "acodec": "mp4a.40.2"},
+        ]
+    }
+    qualities = extract_qualities(
+        ydl=None,
+        info=mock_4k,
+        duration=120,
+        base_stream_endpoint="/api/stream",
+        video_id="4k_video",
+        original_url="https://youtube.com/watch?v=4k_video"
+    )
+
+    labels = [q.quality_label for q in qualities]
+    assert "4K Ultra HD" in labels
+    assert "2K Quad HD" in labels
+    assert "1080p Full HD" in labels
+    assert "720p HD" in labels
+    assert "Audio MP3" in labels
+
+    # Ensure all sizes are distinct (not identical)
+    sizes = [q.filesize_approx for q in qualities if not q.is_audio_only]
+    assert len(sizes) == len(set(sizes)), "Every video quality must have a distinct download size!"
+    # Ensure descending sizes
+    assert sizes == sorted(sizes, reverse=True), "Qualities should have descending file sizes"
+
 

@@ -238,10 +238,13 @@ def get_format_selector(quality_tag: str, is_vertical: bool = False) -> str:
     if quality_tag == "mp3":
         return "ba[ext=m4a]/ba/b/bestaudio/best"
     res_map = {
+        "2160p": 2160,
+        "1440p": 1440,
         "1080p": 1080,
         "720p": 720,
         "480p": 480,
         "360p": 360,
+        "240p": 240,
     }
     target_res = res_map.get(quality_tag)
     if not target_res:
@@ -249,6 +252,7 @@ def get_format_selector(quality_tag: str, is_vertical: bool = False) -> str:
     dim = "width" if is_vertical else "height"
     return (
         f"bv*[vcodec^=avc1][{dim}<={target_res}]+ba[ext=m4a]/"
+        f"bv*[{dim}<={target_res}]+ba[ext=m4a]/"
         f"bv*[{dim}<={target_res}]+ba/"
         f"b[{dim}<={target_res}]/"
         f"best[{dim}<={target_res}]/"
@@ -256,66 +260,14 @@ def get_format_selector(quality_tag: str, is_vertical: bool = False) -> str:
         f"bv*+ba/best/b"
     )
 
-def calculate_tier_size(
-    ydl: Optional[yt_dlp.YoutubeDL],
-    info: dict,
-    quality_tag: str,
-    target_res: int,
-    duration: Optional[int],
-    is_vertical: bool = False
-) -> Tuple[int, str, Optional[int]]:
-    """
-    Computes exact downloaded file size by inspecting real stream formats.
-    Returns: (bytes_val, formatted_str, matched_dim)
-    """
-    if quality_tag == "mp3":
-        dur = duration if duration and duration > 0 else 60
-        mp3_bytes = int((192 * 1000 / 8) * dur)
-        return mp3_bytes, format_filesize(mp3_bytes), None
-
-    formats = info.get("formats", [])
-    dim = "width" if is_vertical else "height"
-    if formats:
-        # Find formats with video codec
-        video_formats = [
-            f for f in formats
-            if f.get("vcodec") and f.get("vcodec") != "none" and (f.get(dim) or 0) > 0
-        ]
-        matching_v = [f for f in video_formats if (f.get(dim) or 0) <= target_res]
-        if not matching_v and video_formats:
-            matching_v = video_formats
-
-        if matching_v:
-            best_v = max(matching_v, key=lambda f: f.get(dim) or 0)
-            matched_dim = best_v.get(dim)
-            v_size = best_v.get("filesize") or best_v.get("filesize_approx")
-            if not v_size and best_v.get("tbr") and duration:
-                v_size = int((best_v["tbr"] * 1000 / 8) * duration)
-
-            # If video has separate audio, sum best audio stream size
-            if best_v.get("acodec") == "none":
-                audio_formats = [
-                    f for f in formats
-                    if f.get("vcodec") == "none" and f.get("acodec") and f.get("acodec") != "none"
-                ]
-                if audio_formats:
-                    best_a = max(audio_formats, key=lambda f: f.get("abr") or f.get("tbr") or 0)
-                    a_size = best_a.get("filesize") or best_a.get("filesize_approx")
-                    if not a_size and best_a.get("abr") and duration:
-                        a_size = int((best_a["abr"] * 1000 / 8) * duration)
-                    if v_size and a_size:
-                        total_bytes = v_size + a_size
-                        return total_bytes, format_filesize(total_bytes), matched_dim
-
-            if v_size:
-                return v_size, format_filesize(v_size), matched_dim
-
-    # Fallback to estimated bitrate if exact stream metadata is missing
-    bitrate_map = {1080: 3200, 720: 1500, 480: 800, 360: 400}
-    dur = duration if duration and duration > 0 else 60
-    kbps = bitrate_map.get(target_res, 1000)
-    bytes_est = int((kbps * 1000 / 8) * dur)
-    return bytes_est, format_filesize(bytes_est), target_res
+TARGET_QUALITY_TIERS = [
+    (2160, "4K Ultra HD", "2160p"),
+    (1440, "2K Quad HD", "1440p"),
+    (1080, "1080p Full HD", "1080p"),
+    (720, "720p HD", "720p"),
+    (480, "480p SD", "480p"),
+    (360, "360p", "360p"),
+]
 
 def extract_qualities(
     ydl: Optional[yt_dlp.YoutubeDL],
@@ -329,36 +281,131 @@ def extract_qualities(
     encoded_url = urllib.parse.quote(original_url, safe='')
 
     is_vertical = (info.get("height") or 0) > (info.get("width") or 0)
+    dim = "width" if is_vertical else "height"
+    formats = info.get("formats", [])
+    dur = duration or info.get("duration")
 
-    tiers = [
-        (1080, "1080p Full HD", "1080p"),
-        (720, "720p HD", "720p"),
-        (480, "480p SD", "480p"),
-        (360, "360p", "360p"),
+    # Find best audio stream and its size
+    audio_formats = [
+        f for f in formats
+        if f.get("vcodec") == "none" and f.get("acodec") and f.get("acodec") != "none"
     ]
+    best_a = max(audio_formats, key=lambda f: f.get("abr") or f.get("tbr") or 0) if audio_formats else None
+    a_size = 0
+    if best_a:
+        a_size = best_a.get("filesize") or best_a.get("filesize_approx") or 0
+        if not a_size and best_a.get("abr") and dur:
+            a_size = int((best_a["abr"] * 1000 / 8) * dur)
+        elif not a_size and best_a.get("tbr") and dur:
+            a_size = int((best_a["tbr"] * 1000 / 8) * dur)
 
-    for target_res, label, quality_tag in tiers:
-        exact_bytes, est_formatted, matched_dim = calculate_tier_size(
-            ydl, info, quality_tag, target_res, duration, is_vertical=is_vertical
-        )
+    # Filter video formats
+    v_formats = [f for f in formats if f.get("vcodec") != "none" and (f.get(dim) or 0) > 0]
+    if not v_formats:
+        v_formats = [f for f in formats if (f.get(dim) or 0) > 0]
+    if not v_formats and formats:
+        v_formats = formats
+    if not v_formats and (info.get(dim) or 0) > 0:
+        v_formats = [info]
+
+    max_dim = max((f.get(dim) or 0) for f in v_formats) if v_formats else (info.get(dim) or 720)
+    if max_dim <= 0:
+        max_dim = 720
+
+    # Determine max resolution stream size for scaling fallback
+    max_res_fmt = max(v_formats, key=lambda f: (f.get(dim) or 0, f.get('tbr') or 0)) if v_formats else {}
+    max_res_size = max_res_fmt.get('filesize') or max_res_fmt.get('filesize_approx') or 0
+    if not max_res_size and (max_res_fmt.get('tbr') or max_res_fmt.get('vbr')) and dur:
+        bitrate = max_res_fmt.get('tbr') or max_res_fmt.get('vbr')
+        max_res_size = int((bitrate * 1000 / 8) * dur)
+    if not max_res_size:
+        default_bitrate = {2160: 16000, 1440: 8000, 1080: 3500, 720: 1800, 480: 900, 360: 500}.get(max_dim, 2000)
+        max_res_size = int((default_bitrate * 1000 / 8) * (dur or 60))
+
+    seen_resolutions = set()
+
+    for target_res, label, quality_tag in TARGET_QUALITY_TIERS:
+        # Don't add tiers higher than what the video actually provides (avoids fake 4K/2K on 1080p videos)
+        if max_dim < target_res * 0.85:
+            continue
+
+        # Look for formats whose dimension matches this tier bracket
+        candidates = [f for f in v_formats if target_res * 0.85 <= (f.get(dim) or 0) <= target_res * 1.15]
+
+        if candidates:
+            def rank_fmt(f):
+                is_mp4 = 1 if f.get("ext") == "mp4" else 0
+                is_avc = 1 if (f.get("vcodec") or "").startswith("avc1") else 0
+                sz = f.get("filesize") or f.get("filesize_approx") or 0
+                tbr = f.get("tbr") or f.get("vbr") or 0
+                return (is_avc, is_mp4, sz > 0, tbr)
+
+            best_v = max(candidates, key=rank_fmt)
+            matched_res = best_v.get(dim) or target_res
+
+            # Prevent duplicate options with identical stream resolution
+            if matched_res in seen_resolutions:
+                continue
+            seen_resolutions.add(matched_res)
+
+            v_size = best_v.get("filesize") or best_v.get("filesize_approx") or 0
+            if not v_size and (best_v.get("tbr") or best_v.get("vbr")) and dur:
+                bitrate = best_v.get("tbr") or best_v.get("vbr")
+                v_size = int((bitrate * 1000 / 8) * dur)
+
+            # Total downloaded size (sum video + audio if separate streams)
+            total_bytes = v_size + (a_size if best_v.get("acodec") == "none" else 0)
+        else:
+            # Scaled size fallback for lower tier
+            matched_res = target_res
+            if matched_res in seen_resolutions:
+                continue
+            seen_resolutions.add(matched_res)
+            scale = (target_res / max_dim) ** 1.45
+            total_bytes = max(int(max_res_size * scale), 1024 * 300)
+
+        if total_bytes <= 0:
+            bitrate_est = {2160: 12000, 1440: 6000, 1080: 3000, 720: 1500, 480: 800, 360: 450}.get(matched_res, 1000)
+            d = dur if dur and dur > 0 else 60
+            total_bytes = int((bitrate_est * 1000 / 8) * d)
 
         stream_url = f"{base_stream_endpoint}?url={encoded_url}&format_id={quality_tag}&ext=mp4"
 
         options.append(QualityOption(
             format_id=quality_tag,
             quality_label=label,
-            resolution=f"{matched_dim or target_res}p",
+            resolution=f"{matched_res}p",
             ext="mp4",
-            filesize_approx=exact_bytes,
-            filesize_formatted=est_formatted,
+            filesize_approx=total_bytes,
+            filesize_formatted=format_filesize(total_bytes),
+            is_audio_only=False,
+            download_url=stream_url
+        ))
+
+    # Fallback if no standard tier matched (e.g. single format with unusual resolution)
+    if not options and v_formats:
+        best_v = max(v_formats, key=lambda f: f.get(dim) or 0)
+        matched_res = best_v.get(dim) or 720
+        v_size = best_v.get("filesize") or best_v.get("filesize_approx") or 0
+        if not v_size and (best_v.get("tbr") or best_v.get("vbr")) and dur:
+            bitrate = best_v.get("tbr") or best_v.get("vbr")
+            v_size = int((bitrate * 1000 / 8) * dur)
+        total_bytes = v_size + (a_size if best_v.get("acodec") == "none" else 0)
+        stream_url = f"{base_stream_endpoint}?url={encoded_url}&format_id=720p&ext=mp4"
+
+        options.append(QualityOption(
+            format_id="720p",
+            quality_label=f"{matched_res}p HD" if matched_res >= 720 else f"{matched_res}p",
+            resolution=f"{matched_res}p",
+            ext="mp4",
+            filesize_approx=total_bytes,
+            filesize_formatted=format_filesize(total_bytes),
             is_audio_only=False,
             download_url=stream_url
         ))
 
     # Audio MP3
-    audio_bytes, audio_formatted, _ = calculate_tier_size(
-        ydl, info, "mp3", 0, duration, is_vertical=is_vertical
-    )
+    audio_bytes = a_size if a_size > 0 else int((192 * 1000 / 8) * (dur or 60))
     audio_stream_url = f"{base_stream_endpoint}?url={encoded_url}&format_id=mp3&ext=mp3&audio_only=true"
 
     options.append(QualityOption(
@@ -367,7 +414,7 @@ def extract_qualities(
         resolution="Audio 320k",
         ext="mp3",
         filesize_approx=audio_bytes,
-        filesize_formatted=audio_formatted,
+        filesize_formatted=format_filesize(audio_bytes),
         is_audio_only=True,
         download_url=audio_stream_url
     ))
