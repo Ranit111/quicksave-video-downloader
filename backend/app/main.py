@@ -71,6 +71,40 @@ def health_check():
         "cookies_path": get_cookies_file(),
     }
 
+@app.get("/api/debug-extract")
+def debug_extract(url: str = "https://www.youtube.com/watch?v=aqz-KE-bpKQ"):
+    cookie_file = get_cookies_file()
+    results = {}
+    test_clients = [
+        ("visionos_no_cookie", ["visionos"], False),
+        ("visionos_with_cookie", ["visionos"], True),
+        ("web_no_cookie", ["web"], False),
+        ("web_with_cookie", ["web"], True),
+        ("android_no_cookie", ["android"], False),
+        ("default_no_cookie", None, False),
+        ("default_with_cookie", None, True),
+    ]
+    for name, clients, use_cookie in test_clients:
+        opts = {
+            "quiet": True,
+            "skip_download": True,
+            "socket_timeout": 10,
+            "nocheckcertificate": True,
+        }
+        if clients:
+            opts["extractor_args"] = {"youtube": {"player_client": clients}}
+        if use_cookie and cookie_file:
+            opts["cookiefile"] = cookie_file
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                fmts = info.get("formats", [])
+                heights = sorted(set(f.get("height") for f in fmts if f.get("height")))
+                results[name] = {"success": True, "heights": heights, "formats_count": len(fmts)}
+        except Exception as e:
+            results[name] = {"success": False, "error": str(e)[:300]}
+    return results
+
 @app.get("/api/platforms")
 def get_supported_platforms():
     return {
