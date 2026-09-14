@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse, Response, JSONResponse
 import yt_dlp
 
 from app.models import ExtractRequest, VideoInfoResponse, ErrorResponse
-from app.extractor import extract_info, detect_platform, get_format_selector, resolve_facebook_url
+from app.extractor import extract_info, detect_platform, get_format_selector, resolve_facebook_url, get_cookies_file
 
 app = FastAPI(
     title="QuickSave Video Downloader API",
@@ -211,12 +211,26 @@ def stream_media(
         elif "facebook.com" in target_url and "m.facebook.com" not in target_url:
             candidate_urls.append(re.sub(r'https?://(?:www\.)?facebook\.com', 'https://m.facebook.com', target_url))
 
+    cookie_file = get_cookies_file()
+
     # 1. Fetch metadata for clean title and orientation
     is_vertical = False
     safe_title = "video"
     for cand_url in candidate_urls:
         try:
-            ydl_opts_meta = {"quiet": True, "no_warnings": True, "skip_download": True, "socket_timeout": 8, "nocheckcertificate": True}
+            ydl_opts_meta = {
+                "quiet": True,
+                "no_warnings": True,
+                "skip_download": True,
+                "socket_timeout": 8,
+                "nocheckcertificate": True,
+            }
+            if cookie_file:
+                ydl_opts_meta["cookiefile"] = cookie_file
+                ydl_opts_meta["extractor_args"] = {"youtube": {"player_client": ["web", "mweb", "web_creator"]}}
+            else:
+                ydl_opts_meta["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
+
             with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
                 meta = ydl.extract_info(cand_url, download=False)
                 if meta:
@@ -281,6 +295,11 @@ def stream_media(
                     "socket_timeout": 25,
                     "nocheckcertificate": True,
                 }
+                if cookie_file:
+                    ydl_opts["cookiefile"] = cookie_file
+                else:
+                    ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
+
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([cand_url])
 
@@ -307,6 +326,11 @@ def stream_media(
                         "socket_timeout": 25,
                         "nocheckcertificate": True,
                     }
+                    if cookie_file:
+                        ydl_opts_raw["cookiefile"] = cookie_file
+                    else:
+                        ydl_opts_raw["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
+
                     with yt_dlp.YoutubeDL(ydl_opts_raw) as ydl:
                         ydl.download([cand_url])
 
@@ -369,6 +393,11 @@ def stream_media(
                         "nocheckcertificate": True,
                         "geo_bypass": True,
                     }
+                    if cookie_file:
+                        ydl_opts["cookiefile"] = cookie_file
+                    else:
+                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
+
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([cand_url])
 

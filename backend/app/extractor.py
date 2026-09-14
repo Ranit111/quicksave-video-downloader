@@ -1,6 +1,8 @@
 import http.client
 import logging
+import os
 import re
+import tempfile
 import urllib.parse
 from typing import List, Optional, Tuple
 import yt_dlp
@@ -8,6 +10,46 @@ from app.models import QualityOption, VideoInfoResponse
 from app.related_service import fetch_related_videos, format_duration
 
 logger = logging.getLogger(__name__)
+
+def get_cookies_file() -> Optional[str]:
+    """
+    Finds or generates a valid cookies.txt path from environment variables,
+    backend/cookies.txt, root cookies.txt, or working directory.
+    """
+    # 1. Direct environment variable path
+    env_path = os.environ.get("COOKIES_FILE") or os.environ.get("YTDLP_COOKIES_FILE")
+    if env_path and os.path.isfile(env_path) and os.path.getsize(env_path) > 0:
+        return os.path.abspath(env_path)
+
+    # 2. Raw cookies content passed in environment variable (useful on Render/Cloud hosts)
+    cookies_content = os.environ.get("COOKIES_CONTENT") or os.environ.get("YTDLP_COOKIES") or os.environ.get("YOUTUBE_COOKIES")
+    if cookies_content and len(cookies_content.strip()) > 20:
+        try:
+            temp_cookie_path = os.path.join(tempfile.gettempdir(), "quicksave_env_cookies.txt")
+            with open(temp_cookie_path, "w", encoding="utf-8") as f:
+                f.write(cookies_content.strip())
+            return temp_cookie_path
+        except Exception:
+            pass
+
+    # 3. Candidate file paths on disk
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(base_dir, "..", "cookies.txt"),           # backend/cookies.txt
+        os.path.join(base_dir, "..", "..", "cookies.txt"),      # root/cookies.txt
+        os.path.join(os.getcwd(), "cookies.txt"),              # ./cookies.txt
+        os.path.join(os.getcwd(), "backend", "cookies.txt"),   # ./backend/cookies.txt
+        "/app/cookies.txt",                                    # Docker /app/cookies.txt
+        "/app/backend/cookies.txt",                            # Docker /app/backend/cookies.txt
+    ]
+
+    for cand in candidates:
+        norm_path = os.path.normpath(cand)
+        if os.path.isfile(norm_path) and os.path.getsize(norm_path) > 0:
+            return norm_path
+
+    return None
+
 
 def detect_platform(url: str) -> Tuple[str, str]:
     url_lower = url.lower()
@@ -327,7 +369,41 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         elif "facebook.com" in target_url and "m.facebook.com" not in target_url:
             candidates.append(re.sub(r'https?://(?:www\.)?facebook\.com', 'https://m.facebook.com', target_url))
 
-    ydl_opts = {
+    cookie_file = get_cookies_file()
+
+    # Build fallback option sets for maximum resilience across cloud/datacenter IPs
+    option_sets = []
+
+    if cookie_file:
+        logger.info(f"Using cookies from: {cookie_file}")
+        option_sets.append({
+            "cookiefile": cookie_file,
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "socket_timeout": 15,
+            "extract_flat": False,
+            "no_color": True,
+            "nocheckcertificate": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web", "mweb", "web_creator"]
+                }
+            }
+        })
+        option_sets.append({
+            "cookiefile": cookie_file,
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "socket_timeout": 15,
+            "extract_flat": False,
+            "no_color": True,
+            "nocheckcertificate": True,
+        })
+
+    # Mobile / embedded clients (frequently bypass bot verification without cookies)
+    option_sets.append({
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
@@ -336,26 +412,41 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         "no_color": True,
         "nocheckcertificate": True,
         "extractor_args": {
-        "youtube": {
-            "player_client": ["android", "web"]
+            "youtube": {
+                "player_client": ["android", "ios", "mweb"]
+            }
         }
-    }
-    }
+    })
+
+    # Standard default
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+    })
 
     info = None
     last_err = None
     successful_url = target_url
 
-    for cand_url in candidates:
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(cand_url, download=False)
-                if info:
-                    successful_url = cand_url
-                    break
-        except Exception as e:
-            last_err = e
-            continue
+    for opts in option_sets:
+        if info:
+            break
+        for cand_url in candidates:
+            try:
+                with yt_dlp.YoutubeDL(opts) as ydl:
+                    extracted = ydl.extract_info(cand_url, download=False)
+                    if extracted:
+                        info = extracted
+                        successful_url = cand_url
+                        break
+            except Exception as e:
+                last_err = e
+                continue
 
     if not info:
         if last_err:

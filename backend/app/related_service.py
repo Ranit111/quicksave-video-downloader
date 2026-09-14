@@ -92,6 +92,12 @@ def fetch_related_videos(raw_info: dict, max_results: int = 4) -> List[RelatedVi
     if not candidates:
         candidates.append("trending videos")
 
+    try:
+        from app.extractor import get_cookies_file
+        cookie_file = get_cookies_file()
+    except Exception:
+        cookie_file = None
+
     ydl_opts = {
         "quiet": True,
         "no_warnings": True,
@@ -100,6 +106,10 @@ def fetch_related_videos(raw_info: dict, max_results: int = 4) -> List[RelatedVi
         "socket_timeout": 6,
         "ignoreerrors": True,
     }
+    if cookie_file:
+        ydl_opts["cookiefile"] = cookie_file
+    else:
+        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
     for query in candidates:
         if len(related) >= max_results:
