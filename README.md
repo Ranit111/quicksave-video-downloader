@@ -14,9 +14,27 @@
   <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/yt--dlp-Latest-FF0000?logo=youtube&logoColor=white" alt="yt-dlp" />
+  <img src="https://img.shields.io/badge/Release-v1.0.0-brightgreen?logo=github" alt="Release" />
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20Web%20%7C%20Windows-blue" alt="Platforms" />
   <img src="https://img.shields.io/badge/License-MIT-green" alt="License" />
 </p>
+
+<p align="center">
+  <a href="https://github.com/Ranit111/quicksave-video-downloader/releases/latest">
+    <img src="https://img.shields.io/badge/📥%20Download-Android%20APK%20(v1.0.0)-8A2BE2?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  </a>
+</p>
+
+---
+
+### 📥 Direct APK Downloads
+
+| Architecture | Download Link | Target Devices |
+| :--- | :--- | :--- |
+| **ARM64 (64-bit)** | [⬇️ `QuickSave-v1.0.0-arm64-v8a.apk`](https://github.com/Ranit111/quicksave-video-downloader/releases/download/v1.0.0/QuickSave-v1.0.0-arm64-v8a.apk) | **Recommended** for modern phones (Xiaomi, Samsung, Pixel, OnePlus, Vivo, Oppo, Realme) |
+| **ARMv7 (32-bit)** | [⬇️ `QuickSave-v1.0.0-armeabi-v7a.apk`](https://github.com/Ranit111/quicksave-video-downloader/releases/download/v1.0.0/QuickSave-v1.0.0-armeabi-v7a.apk) | For older 32-bit Android smartphones |
+| **x86_64** | [⬇️ `QuickSave-v1.0.0-x86_64.apk`](https://github.com/Ranit111/quicksave-video-downloader/releases/download/v1.0.0/QuickSave-v1.0.0-x86_64.apk) | For Android Emulators & Chromebooks |
+| **All Releases** | [📦 View All Assets on GitHub Releases](https://github.com/Ranit111/quicksave-video-downloader/releases/tag/v1.0.0) | Full release notes and checksums |
 
 ---
 
