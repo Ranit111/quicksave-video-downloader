@@ -9,7 +9,19 @@ import 'download_trigger_stub.dart' if (dart.library.js_interop) 'download_trigg
 typedef DownloadProgressCallback = void Function(int received, int total, double percent, String speedFormatted);
 
 class GalleryDownloaderService {
-  final Dio _dio = Dio();
+  final Dio _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 20),
+      receiveTimeout: const Duration(seconds: 120),
+      sendTimeout: const Duration(seconds: 20),
+      headers: {
+        'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+        'Accept-Encoding': 'identity',
+      },
+    ),
+  );
   CancelToken? _cancelToken;
 
   /// Request storage / media permissions based on Android API level
@@ -110,6 +122,7 @@ class GalleryDownloaderService {
 
     int lastBytes = 0;
     int lastTime = DateTime.now().millisecondsSinceEpoch;
+    int lastProgressEmit = 0;
     double smoothedSpeed = 0;
 
     try {
@@ -117,16 +130,24 @@ class GalleryDownloaderService {
         downloadUrl,
         filePath,
         cancelToken: _cancelToken,
+        options: Options(
+          headers: {
+            'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+            'Accept': '*/*',
+            'Accept-Encoding': 'identity',
+          },
+        ),
         onReceiveProgress: (received, total) {
           final now = DateTime.now().millisecondsSinceEpoch;
           final timeDelta = (now - lastTime) / 1000.0;
 
-          if (timeDelta >= 0.5 && received > lastBytes) {
+          if (timeDelta >= 0.25 && received > lastBytes) {
             final bytesDelta = received - lastBytes;
             final currentSpeed = bytesDelta / timeDelta;
             smoothedSpeed = (smoothedSpeed == 0)
                 ? currentSpeed
-                : (smoothedSpeed * 0.7 + currentSpeed * 0.3);
+                : (smoothedSpeed * 0.6 + currentSpeed * 0.4);
 
             lastBytes = received;
             lastTime = now;
@@ -135,7 +156,11 @@ class GalleryDownloaderService {
           final percent = total > 0 ? (received / total) : 0.0;
           final speedFormatted = _formatSpeed(smoothedSpeed);
 
-          onProgress(received, total, percent, speedFormatted);
+          // Throttle progress events to 60-80ms to prevent UI thread lag and frame drops
+          if (now - lastProgressEmit >= 60 || (total > 0 && received >= total)) {
+            lastProgressEmit = now;
+            onProgress(received, total, percent, speedFormatted);
+          }
         },
       );
 

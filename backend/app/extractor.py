@@ -22,15 +22,33 @@ def get_cookies_file() -> Optional[str]:
         return os.path.abspath(env_path)
 
     # 2. Raw cookies content passed in environment variable (useful on Render/Cloud hosts)
-    cookies_content = os.environ.get("COOKIES_CONTENT") or os.environ.get("YTDLP_COOKIES") or os.environ.get("YOUTUBE_COOKIES")
+    cookies_content = (
+        os.environ.get("COOKIES_CONTENT")
+        or os.environ.get("YTDLP_COOKIES")
+        or os.environ.get("YOUTUBE_COOKIES")
+        or os.environ.get("COOKIE_CONTENT")
+    )
     if cookies_content and len(cookies_content.strip()) > 20:
         try:
+            normalized_cookies = cookies_content.strip()
+            # Handle escaped newlines / tabs from single-line dashboard input fields
+            if "\\n" in normalized_cookies:
+                normalized_cookies = (
+                    normalized_cookies.replace("\\r\\n", "\n")
+                    .replace("\\n", "\n")
+                    .replace("\\t", "\t")
+                )
+
+            # Ensure Netscape header format if raw cookie records were provided
+            if not normalized_cookies.startswith("#"):
+                normalized_cookies = "# Netscape HTTP Cookie File\n" + normalized_cookies
+
             temp_cookie_path = os.path.join(tempfile.gettempdir(), "quicksave_env_cookies.txt")
             with open(temp_cookie_path, "w", encoding="utf-8") as f:
-                f.write(cookies_content.strip())
+                f.write(normalized_cookies + "\n")
             return temp_cookie_path
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Error writing env cookies: {e}")
 
     # 3. Candidate file paths on disk
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -373,60 +391,21 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
 
     cookie_file = get_cookies_file()
 
+    po_token = os.environ.get("PO_TOKEN") or os.environ.get("YOUTUBE_PO_TOKEN")
+    visitor_data = os.environ.get("VISITOR_DATA") or os.environ.get("YOUTUBE_VISITOR_DATA")
+
+    yt_extra_args = {}
+    if po_token:
+        yt_extra_args["po_token"] = [f"web+{po_token}" if not po_token.startswith("web+") else po_token]
+    if visitor_data:
+        yt_extra_args["visitor_data"] = [visitor_data]
+
     # Build fallback option sets for maximum resilience across cloud/datacenter IPs
     option_sets = []
 
-    # 1. Apple VisionOS + Android InnerTube engine (bypasses bot challenges & PO token requirements)
-    option_sets.append({
-        "quiet": True,
-        "no_warnings": True,
-        "skip_download": True,
-        "socket_timeout": 15,
-        "extract_flat": False,
-        "no_color": True,
-        "nocheckcertificate": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["visionos", "android", "web"]
-            }
-        }
-    })
-
-    # 2. VisionOS pure native HLS client
-    option_sets.append({
-        "quiet": True,
-        "no_warnings": True,
-        "skip_download": True,
-        "socket_timeout": 15,
-        "extract_flat": False,
-        "no_color": True,
-        "nocheckcertificate": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["visionos"]
-            }
-        }
-    })
-
-    # 3. Android + Web fallback
-    option_sets.append({
-        "quiet": True,
-        "no_warnings": True,
-        "skip_download": True,
-        "socket_timeout": 15,
-        "extract_flat": False,
-        "no_color": True,
-        "nocheckcertificate": True,
-        "extractor_args": {
-            "youtube": {
-                "player_client": ["android", "web"]
-            }
-        }
-    })
-
-    # 4. If cookie file exists, try with cookies
+    # 1. TOP PRIORITY: Authenticated Session Cookies (from COOKIES_CONTENT env or file)
     if cookie_file:
-        logger.info(f"Using cookies from: {cookie_file}")
+        logger.info(f"Using authenticated cookies from: {cookie_file}")
         option_sets.append({
             "cookiefile": cookie_file,
             "quiet": True,
@@ -438,7 +417,8 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "nocheckcertificate": True,
             "extractor_args": {
                 "youtube": {
-                    "player_client": ["visionos", "web", "mweb"]
+                    "player_client": ["web", "mweb", "android"],
+                    **yt_extra_args,
                 }
             }
         })
@@ -451,7 +431,64 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "extract_flat": False,
             "no_color": True,
             "nocheckcertificate": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["visionos", "web"],
+                    **yt_extra_args,
+                }
+            }
         })
+
+    # 2. Apple VisionOS + Android InnerTube engine (bypasses bot challenges & PO token requirements)
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos", "android", "web"],
+                **yt_extra_args,
+            }
+        }
+    })
+
+    # 3. VisionOS pure native HLS client
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["visionos"],
+                **yt_extra_args,
+            }
+        }
+    })
+
+    # 4. Android + Web fallback
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"],
+                **yt_extra_args,
+            }
+        }
+    })
 
     # 5. Standard default
     option_sets.append({

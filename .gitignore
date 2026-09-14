@@ -65,8 +65,10 @@ mobile_app/android/mobile_app_android.iml
 Thumbs.db
 desktop.ini
 
-# Secrets (optional overrides)
+# Secrets and sensitive tokens
 *.secret
+*cookies.txt
+*.cookies
 
 # Scratch and test binaries
 scratch/
@@ -76,3 +78,4 @@ download_test.mp4
 *.webm
 *.part
 *.ytdl
+

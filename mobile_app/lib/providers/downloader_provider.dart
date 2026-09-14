@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/video_info.dart';
 import '../services/api_service.dart';
 import '../services/gallery_downloader_service.dart';
+import '../services/youtube_local_extractor_service.dart';
 import '../utils/app_error_formatter.dart';
 
 enum AppState { idle, extracting, ready, downloading, completed, error }
@@ -11,12 +12,16 @@ enum AppState { idle, extracting, ready, downloading, completed, error }
 class DownloaderProvider extends ChangeNotifier {
   final ApiService _apiService;
   final GalleryDownloaderService _downloaderService;
+  final YoutubeLocalExtractorService _youtubeLocalExtractorService;
 
   DownloaderProvider({
     ApiService? apiService,
     GalleryDownloaderService? downloaderService,
+    YoutubeLocalExtractorService? youtubeLocalExtractorService,
   })  : _apiService = apiService ?? ApiService(),
-        _downloaderService = downloaderService ?? GalleryDownloaderService();
+        _downloaderService = downloaderService ?? GalleryDownloaderService(),
+        _youtubeLocalExtractorService =
+            youtubeLocalExtractorService ?? YoutubeLocalExtractorService();
 
   final TextEditingController urlController = TextEditingController();
   AppState _state = AppState.idle;
@@ -171,7 +176,22 @@ class DownloaderProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await _apiService.extractVideo(targetUrl);
+      VideoInfo res;
+      if (YoutubeLocalExtractorService.isYouTubeUrl(targetUrl)) {
+        try {
+          res = await _youtubeLocalExtractorService.extract(targetUrl);
+        } catch (ytErr) {
+          // If client-side extraction failed, try fallback to backend API
+          try {
+            res = await _apiService.extractVideo(targetUrl);
+          } catch (_) {
+            rethrow;
+          }
+        }
+      } else {
+        res = await _apiService.extractVideo(targetUrl);
+      }
+
       if (currentSeq != _fetchSequence) return;
       _videoInfo = res;
       if (_videoInfo != null && _videoInfo!.qualities.isNotEmpty) {
@@ -207,6 +227,8 @@ class DownloaderProvider extends ChangeNotifier {
             isAudioOnly: _selectedQuality!.isAudioOnly,
           );
 
+      int lastUiUpdate = 0;
+
       final savedPath = await _downloaderService.downloadToGallery(
         downloadUrl: streamUrl,
         title: _videoInfo!.title,
@@ -217,7 +239,12 @@ class DownloaderProvider extends ChangeNotifier {
           _bytesTotal = total;
           _downloadProgress = percent;
           _downloadSpeed = speed;
-          notifyListeners();
+
+          final now = DateTime.now().millisecondsSinceEpoch;
+          if (now - lastUiUpdate >= 80 || (total > 0 && received >= total)) {
+            lastUiUpdate = now;
+            notifyListeners();
+          }
         },
       );
 
