@@ -47,28 +47,31 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyD0b_WjugxQTUoq6Dztlhpj0Ei4za1egmw',
-    appId: '1:169451032431:web:d8e35cf81434914c62c9bf',
-    messagingSenderId: '169451032431',
-    projectId: 'starry-science-jxfb9',
-    authDomain: 'starry-science-jxfb9.firebaseapp.com',
-    storageBucket: 'starry-science-jxfb9.firebasestorage.app',
+    apiKey: 'AIzaSyChGrd2pyOmibadAMUwCs0Hg4puGKXa9Mw',
+    appId: '1:705729241638:web:d717c53239502de3923ce7',
+    messagingSenderId: '705729241638',
+    projectId: 'rato-aeaac',
+    authDomain: 'rato-aeaac.firebaseapp.com',
+    databaseURL: 'https://rato-aeaac-default-rtdb.firebaseio.com',
+    storageBucket: 'rato-aeaac.firebasestorage.app',
+    measurementId: 'G-MGSCSK72QT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD0b_WjugxQTUoq6Dztlhpj0Ei4za1egmw',
-    appId: '1:169451032431:android:e154fcfdf05c21dfd9a0d8',
-    messagingSenderId: '169451032431',
-    projectId: 'starry-science-jxfb9',
-    storageBucket: 'starry-science-jxfb9.firebasestorage.app',
+    apiKey: 'AIzaSyBNVZYUCUYFvVBwvtUst2IUfEd-qjCKZfg',
+    appId: '1:705729241638:android:02fe0841c8805ebd923ce7',
+    messagingSenderId: '705729241638',
+    projectId: 'rato-aeaac',
+    databaseURL: 'https://rato-aeaac-default-rtdb.firebaseio.com',
+    storageBucket: 'rato-aeaac.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyD0b_WjugxQTUoq6Dztlhpj0Ei4za1egmw',
-    appId: '1:169451032431:ios:b3f462adfe8084a3d9a0d8',
-    messagingSenderId: '169451032431',
-    projectId: 'starry-science-jxfb9',
-    storageBucket: 'starry-science-jxfb9.firebasestorage.app',
+    apiKey: 'AIzaSyDbdqUfU-Ly6rZ_HC1WJFs1NzoN7PF0NJM',
+    appId: '1:705729241638:ios:9f14be9dd9fc5e6d923ce7',
+    messagingSenderId: '705729241638',
+    projectId: 'rato-aeaac',
+    databaseURL: 'https://rato-aeaac-default-rtdb.firebaseio.com',
+    storageBucket: 'rato-aeaac.firebasestorage.app',
     iosBundleId: 'com.snapsave.downloader.mobileApp',
   );
 }
