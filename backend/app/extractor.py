@@ -450,25 +450,9 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
     # Build fallback option sets for maximum resilience across cloud/datacenter IPs
     option_sets = []
 
-    # 1. TOP PRIORITY: Authenticated Session Cookies (from COOKIES_CONTENT env or file)
+    # 1. TOP PRIORITY: Authenticated Session Cookies with VisionOS + Web (gives all 4K, 2K, 1080p, 720p, 480p, 360p)
     if cookie_file:
         logger.info(f"Using authenticated cookies from: {cookie_file}")
-        option_sets.append({
-            "cookiefile": cookie_file,
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-            "socket_timeout": 15,
-            "extract_flat": False,
-            "no_color": True,
-            "nocheckcertificate": True,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["web", "mweb", "android"],
-                    **yt_extra_args,
-                }
-            }
-        })
         option_sets.append({
             "cookiefile": cookie_file,
             "quiet": True,
@@ -485,8 +469,24 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
                 }
             }
         })
+        option_sets.append({
+            "cookiefile": cookie_file,
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "socket_timeout": 15,
+            "extract_flat": False,
+            "no_color": True,
+            "nocheckcertificate": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["visionos"],
+                    **yt_extra_args,
+                }
+            }
+        })
 
-    # 2. Apple VisionOS + Android InnerTube engine (bypasses bot challenges & PO token requirements)
+    # 2. VisionOS pure native engine (bypasses bot challenges and provides all 4K, 2K, 1080p, 720p, 480p, 360p)
     option_sets.append({
         "quiet": True,
         "no_warnings": True,
@@ -497,7 +497,7 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         "nocheckcertificate": True,
         "extractor_args": {
             "youtube": {
-                "player_client": ["visionos", "android", "web"],
+                "player_client": ["visionos", "web"],
                 **yt_extra_args,
             }
         }

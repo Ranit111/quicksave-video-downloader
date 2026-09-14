@@ -234,7 +234,7 @@ def stream_media(
                 "nocheckcertificate": True,
                 "extractor_args": {
                     "youtube": {
-                        "player_client": ["web", "mweb", "android"] if cookie_file else ["visionos", "android", "web"]
+                        "player_client": ["visionos", "web"]
                     }
                 }
             }
@@ -410,7 +410,7 @@ def stream_media(
                         "geo_bypass": True,
                         "extractor_args": {
                             "youtube": {
-                                "player_client": ["visionos", "android", "web"]
+                                "player_client": ["visionos", "web"]
                             }
                         }
                     }
