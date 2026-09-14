@@ -385,11 +385,6 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "extract_flat": False,
             "no_color": True,
             "nocheckcertificate": True,
-            "extractor_args": {
-                "youtube": {
-                    "player_client": ["web", "mweb", "web_creator"]
-                }
-            }
         })
         option_sets.append({
             "cookiefile": cookie_file,
@@ -400,6 +395,11 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
             "extract_flat": False,
             "no_color": True,
             "nocheckcertificate": True,
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web", "mweb", "web_creator", "ios"]
+                }
+            }
         })
 
     # Mobile / embedded clients (frequently bypass bot verification without cookies)
