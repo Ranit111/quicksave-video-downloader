@@ -224,12 +224,14 @@ def stream_media(
                 "skip_download": True,
                 "socket_timeout": 8,
                 "nocheckcertificate": True,
+                "extractor_args": {
+                    "youtube": {
+                        "player_client": ["android", "web"]
+                    }
+                }
             }
             if cookie_file:
                 ydl_opts_meta["cookiefile"] = cookie_file
-                ydl_opts_meta["extractor_args"] = {"youtube": {"player_client": ["web", "mweb", "web_creator"]}}
-            else:
-                ydl_opts_meta["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
             with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
                 meta = ydl.extract_info(cand_url, download=False)
@@ -294,11 +296,14 @@ def stream_media(
                     }],
                     "socket_timeout": 25,
                     "nocheckcertificate": True,
+                    "extractor_args": {
+                        "youtube": {
+                            "player_client": ["android", "web"]
+                        }
+                    }
                 }
                 if cookie_file:
                     ydl_opts["cookiefile"] = cookie_file
-                else:
-                    ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     ydl.download([cand_url])
@@ -325,11 +330,14 @@ def stream_media(
                         "no_warnings": True,
                         "socket_timeout": 25,
                         "nocheckcertificate": True,
+                        "extractor_args": {
+                            "youtube": {
+                                "player_client": ["android", "web"]
+                            }
+                        }
                     }
                     if cookie_file:
                         ydl_opts_raw["cookiefile"] = cookie_file
-                    else:
-                        ydl_opts_raw["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
                     with yt_dlp.YoutubeDL(ydl_opts_raw) as ydl:
                         ydl.download([cand_url])
@@ -392,11 +400,14 @@ def stream_media(
                         "socket_timeout": 30,
                         "nocheckcertificate": True,
                         "geo_bypass": True,
+                        "extractor_args": {
+                            "youtube": {
+                                "player_client": ["android", "web"]
+                            }
+                        }
                     }
                     if cookie_file:
                         ydl_opts["cookiefile"] = cookie_file
-                    else:
-                        ydl_opts["extractor_args"] = {"youtube": {"player_client": ["android", "ios", "mweb"]}}
 
                     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                         ydl.download([cand_url])

@@ -376,18 +376,25 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
     # Build fallback option sets for maximum resilience across cloud/datacenter IPs
     option_sets = []
 
+    # 1. Android + Web InnerTube engine (most resilient against cloud IP bot checks)
+    option_sets.append({
+        "quiet": True,
+        "no_warnings": True,
+        "skip_download": True,
+        "socket_timeout": 15,
+        "extract_flat": False,
+        "no_color": True,
+        "nocheckcertificate": True,
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["android", "web"]
+            }
+        }
+    })
+
+    # 2. If cookie file exists, try with cookies
     if cookie_file:
         logger.info(f"Using cookies from: {cookie_file}")
-        option_sets.append({
-            "cookiefile": cookie_file,
-            "quiet": True,
-            "no_warnings": True,
-            "skip_download": True,
-            "socket_timeout": 15,
-            "extract_flat": False,
-            "no_color": True,
-            "nocheckcertificate": True,
-        })
         option_sets.append({
             "cookiefile": cookie_file,
             "quiet": True,
@@ -403,8 +410,18 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
                 }
             }
         })
+        option_sets.append({
+            "cookiefile": cookie_file,
+            "quiet": True,
+            "no_warnings": True,
+            "skip_download": True,
+            "socket_timeout": 15,
+            "extract_flat": False,
+            "no_color": True,
+            "nocheckcertificate": True,
+        })
 
-    # Mobile / embedded clients (frequently bypass bot verification without cookies)
+    # 3. Android standalone client fallback
     option_sets.append({
         "quiet": True,
         "no_warnings": True,
@@ -415,12 +432,12 @@ def extract_info(url: str, base_url: str = "") -> VideoInfoResponse:
         "nocheckcertificate": True,
         "extractor_args": {
             "youtube": {
-                "player_client": ["android", "ios", "mweb"]
+                "player_client": ["android"]
             }
         }
     })
 
-    # Standard default
+    # 4. Standard default
     option_sets.append({
         "quiet": True,
         "no_warnings": True,
